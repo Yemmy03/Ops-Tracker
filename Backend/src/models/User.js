@@ -24,13 +24,31 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Password is required'],
       minlength: [6, 'Password must be at least 6 characters'],
-      select: false, // Don't return password by default
+      select: false,
+    },
+    role: {
+      type: String,
+      enum: ['user', 'admin', 'manager'],
+      default: 'user',
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    lastLogin: {
+      type: Date,
     },
   },
   {
     timestamps: true,
   }
 );
+
+// Indexes for performance
+userSchema.index({ email: 1 });
+userSchema.index({ role: 1 });
+userSchema.index({ isActive: 1 });
+userSchema.index({ createdAt: -1 });
 
 // Hash password before saving
 userSchema.pre('save', async function (next) {
@@ -57,6 +75,12 @@ userSchema.methods.toJSON = function () {
   const obj = this.toObject();
   delete obj.password;
   return obj;
+};
+
+// Update last login
+userSchema.methods.updateLastLogin = async function () {
+  this.lastLogin = new Date();
+  await this.save();
 };
 
 const User = mongoose.model('User', userSchema);
