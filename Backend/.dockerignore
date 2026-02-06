@@ -3,6 +3,7 @@ npm-debug.log
 .env
 .env.local
 .env.production
+.env.example
 .git
 .gitignore
 README.md
