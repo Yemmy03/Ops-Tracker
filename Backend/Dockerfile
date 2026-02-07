@@ -20,6 +20,7 @@ FROM node:18-alpine
 WORKDIR /app
 
 # Create non-root user
+# Creates a system user and group `nodejs` with fixed ID 1001 to run the app without root privileges.
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
 
