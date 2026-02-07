@@ -1,7 +1,7 @@
 # Multi-stage build for optimized production image
 
-# Build stage
-FROM node:18-alpine AS build
+# Build stage: Stage 1
+FROM node:18 AS build
 
 WORKDIR /app
 
@@ -17,7 +17,7 @@ COPY . .
 # Build the application
 RUN npm run build
 
-# Production stage
+# Production stage: Stage 2
 FROM nginx:alpine
 
 # Copy built assets from build stage

@@ -26,10 +26,16 @@ const Dashboard = () => {
       setLoading(true);
       setError('');
       const response = await issuesAPI.getAll();
-      setIssues(response.data);
+
+      // Ensure we always store an array
+      const data = Array.isArray(response.data)
+        ? response.data
+        : response.data.issues || [];
+      setIssues(data);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to fetch issues');
       console.error('Error fetching issues:', err);
+      setIssues([]); // ensure issues is always an array
     } finally {
       setLoading(false);
     }
@@ -107,34 +113,55 @@ const Dashboard = () => {
     }));
   };
 
-  const filteredIssues = issues.filter((issue) => {
-    const matchesStatus =
-      filters.status === 'all' || issue.status === filters.status;
-    const matchesPriority =
-      filters.priority === 'all' || issue.priority === filters.priority;
-    const matchesSearch =
-      filters.search === '' ||
-      issue.title.toLowerCase().includes(filters.search.toLowerCase()) ||
-      issue.description.toLowerCase().includes(filters.search.toLowerCase()) ||
-      (issue.assignedTo && issue.assignedTo.toLowerCase().includes(filters.search.toLowerCase()));
+  // Safe filtering: only filter if issues is an array
+  const filteredIssues = Array.isArray(issues)
+    ? issues.filter((issue) => {
+        const matchesStatus =
+          filters.status === 'all' || issue.status === filters.status;
+        const matchesPriority =
+          filters.priority === 'all' || issue.priority === filters.priority;
+        const matchesSearch =
+          filters.search === '' ||
+          issue.title.toLowerCase().includes(filters.search.toLowerCase()) ||
+          issue.description.toLowerCase().includes(filters.search.toLowerCase()) ||
+          (issue.assignedTo &&
+            issue.assignedTo.toLowerCase().includes(filters.search.toLowerCase()));
 
-    return matchesStatus && matchesPriority && matchesSearch;
-  });
+        return matchesStatus && matchesPriority && matchesSearch;
+      })
+    : [];
 
+  // Safe stats calculation
   const stats = {
-    total: issues.length,
-    open: issues.filter((i) => i.status === 'Open').length,
-    inProgress: issues.filter((i) => i.status === 'In Progress').length,
-    closed: issues.filter((i) => i.status === 'Closed').length,
+    total: Array.isArray(issues) ? issues.length : 0,
+    open: Array.isArray(issues)
+      ? issues.filter((i) => i.status === 'Open').length
+      : 0,
+    inProgress: Array.isArray(issues)
+      ? issues.filter((i) => i.status === 'In Progress').length
+      : 0,
+    closed: Array.isArray(issues)
+      ? issues.filter((i) => i.status === 'Closed').length
+      : 0,
   };
+
   return (
     <>
       <Navbar />
 
-      <div className="container" style={{ paddingTop: 'var(--spacing-xl)', paddingBottom: 'var(--spacing-2xl)' }}>
+      <div
+        className="container"
+        style={{
+          paddingTop: 'var(--spacing-xl)',
+          paddingBottom: 'var(--spacing-2xl)',
+        }}
+      >
         {/* Header */}
         <div style={{ marginBottom: 'var(--spacing-xl)' }}>
-          <div className="flex items-center justify-between" style={{ marginBottom: 'var(--spacing-md)' }}>
+          <div
+            className="flex items-center justify-between"
+            style={{ marginBottom: 'var(--spacing-md)' }}
+          >
             <div>
               <h1 style={{ marginBottom: '0.25rem' }}>Issues Dashboard</h1>
               <p className="text-muted">
@@ -147,48 +174,86 @@ const Dashboard = () => {
           </div>
 
           {/* Stats */}
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: 'var(--spacing-lg)',
-            marginTop: 'var(--spacing-lg)'
-          }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: 'var(--spacing-lg)',
+              marginTop: 'var(--spacing-lg)',
+            }}
+          >
             <div className="card">
               <div className="card-body" style={{ padding: '1.25rem' }}>
-                <div className="text-muted" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                <div
+                  className="text-muted"
+                  style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}
+                >
                   Total Issues
                 </div>
-                <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--color-primary)' }}>
+                <div
+                  style={{
+                    fontSize: '2rem',
+                    fontWeight: 700,
+                    color: 'var(--color-primary)',
+                  }}
+                >
                   {stats.total}
                 </div>
               </div>
             </div>
             <div className="card">
               <div className="card-body" style={{ padding: '1.25rem' }}>
-                <div className="text-muted" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                <div
+                  className="text-muted"
+                  style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}
+                >
                   Open
                 </div>
-                <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--color-success)' }}>
+                <div
+                  style={{
+                    fontSize: '2rem',
+                    fontWeight: 700,
+                    color: 'var(--color-success)',
+                  }}
+                >
                   {stats.open}
                 </div>
               </div>
             </div>
             <div className="card">
               <div className="card-body" style={{ padding: '1.25rem' }}>
-                <div className="text-muted" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                <div
+                  className="text-muted"
+                  style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}
+                >
                   In Progress
                 </div>
-                <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--color-warning)' }}>
+                <div
+                  style={{
+                    fontSize: '2rem',
+                    fontWeight: 700,
+                    color: 'var(--color-warning)',
+                  }}
+                >
                   {stats.inProgress}
                 </div>
               </div>
             </div>
             <div className="card">
               <div className="card-body" style={{ padding: '1.25rem' }}>
-                <div className="text-muted" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                <div
+                  className="text-muted"
+                  style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}
+                >
                   Closed
                 </div>
-                <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--color-text-light)' }}>
+                <div
+                  style={{
+                    fontSize: '2rem',
+                    fontWeight: 700,
+                    color: 'var(--color-text-light)',
+                  }}
+                >
                   {stats.closed}
                 </div>
               </div>
@@ -199,11 +264,13 @@ const Dashboard = () => {
         {/* Filters */}
         <div className="card" style={{ marginBottom: 'var(--spacing-xl)' }}>
           <div className="card-body">
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: 'var(--spacing-md)'
-            }}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: 'var(--spacing-md)',
+              }}
+            >
               <div>
                 <label htmlFor="search" className="form-label">
                   Search
@@ -257,19 +324,17 @@ const Dashboard = () => {
         </div>
 
         {/* Error message */}
-        {error && (
-          <div className="alert alert-error">
-            {error}
-          </div>
-        )}
+        {error && <div className="alert alert-error">{error}</div>}
 
         {/* Issues table */}
         {loading ? (
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'center', 
-            padding: 'var(--spacing-2xl)' 
-          }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              padding: 'var(--spacing-2xl)',
+            }}
+          >
             <div className="spinner"></div>
           </div>
         ) : (
